@@ -27,7 +27,7 @@ const layout = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
 };
-
+const { Option } = Select;
 class ButtonAddClass extends PureComponent {
   state = {
     modalVisible: false,
@@ -69,17 +69,22 @@ class ButtonAddClass extends PureComponent {
 
     const dataInsert = {
       subjectCode: classroom.subjectCode,
+      group: classroom.group,
+      to: classroom.to,
+      day: classroom.day,
       subjectName: classroom.subjectName,
-      createdAt: Date.now(),
+      tiet: classroom.tiet,
+
       id: id,
       room: classroom.room,
       teacher: teacher,
-      day: classroom.day,
+      email: classroom.email,
+      emailTDT: classroom.emailTDT,
       startAt: start.valueOf(),
       endAt: end.valueOf(),
       pending: {},
     };
-
+    console.log(dataInsert);
     update(classroomRef, {
       [id]: dataInsert,
     })
@@ -141,6 +146,30 @@ class ButtonAddClass extends PureComponent {
               <Input type="text" />
             </Form.Item>
             <Form.Item
+              name="group"
+              label="Nhóm"
+              rules={[
+                {
+                  required: true,
+                  message: "nhom bat buoc nhap",
+                },
+              ]}
+            >
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item
+              name="to"
+              label="Tổ"
+              rules={[
+                {
+                  required: true,
+                  message: "nhom bat buoc nhap",
+                },
+              ]}
+            >
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item
               name="room"
               label="Phòng học"
               rules={[
@@ -173,6 +202,30 @@ class ButtonAddClass extends PureComponent {
               </Select>
             </Form.Item>
             <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                {
+                  required: true,
+                  message: "nhom bat buoc nhap",
+                },
+              ]}
+            >
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item
+              name="emailTDT"
+              label="Email TDT"
+              rules={[
+                {
+                  required: true,
+                  message: "nhom bat buoc nhap",
+                },
+              ]}
+            >
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item
               name="day"
               label="Thứ"
               rules={[
@@ -182,11 +235,37 @@ class ButtonAddClass extends PureComponent {
                 },
               ]}
             >
-              <Input type="text" />
+              <Select defaultValue="" style={{ width: 120 }}>
+                <Option value="2">thứ 2</Option>
+                <Option value="3">thứ 3</Option>
+                <Option value="4">thứ 4</Option>
+                <Option value="5">thứ 5</Option>
+                <Option value="6">thứ 6</Option>
+                <Option value="7">thứ 7</Option>
+                <Option value="8">chủ nhật</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item
+              name="tiet"
+              label="Tiết"
+              rules={[
+                {
+                  required: true,
+                  message: "Thu batt buoc nhap",
+                },
+              ]}
+            >
+              <Select defaultValue="" style={{ width: 120 }}>
+                <Option value="123-------------">123-------------</Option>
+                <Option value="---456----------">---456----------</Option>
+                <Option value="------789-------">------789-------</Option>
+                <Option value="---------012----">---------012----</Option>
+                <Option value="------------345-">------------345-</Option>
+              </Select>
             </Form.Item>
             <Form.Item
               name="dateRange"
-              label="Ngày bắt đầu và kết thúc"
+              label="Ngày bắt đầu & kết thúc"
               rules={[
                 {
                   type: "array",

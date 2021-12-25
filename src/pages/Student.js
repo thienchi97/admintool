@@ -12,6 +12,7 @@ import * as XLSX from "xlsx";
 import { firebaseUUID } from "../utils";
 import { mapKeys } from "lodash";
 import Papa from "papaparse";
+import EditStudent from "../components/EditStudent";
 
 const { RangePicker } = DatePicker;
 
@@ -21,6 +22,10 @@ class Student extends Component {
     data: [],
     loading: false,
     total: 0,
+    filter: {
+      studentCode: "",
+      classroom: "",
+    },
   };
 
   database = getDatabase();
@@ -30,6 +35,9 @@ class Student extends Component {
       title: "Mã số",
       dataIndex: "code",
       key: "code",
+      render: (code, student) => {
+        return <EditStudent student={student} />;
+      },
     },
     {
       title: "Họ lót",
@@ -81,16 +89,6 @@ class Student extends Component {
       dataIndex: "email",
       key: "email",
     },
-    // {
-    //   title: "CreateAt",
-    //   dataIndex: "createAt",
-    //   key: "createAt",
-    //   render: (createAt) => (
-    //     <p style={{ marginBottom: 0 }}>
-    //       {moment(createAt).format("HH:mm DD/MM/YYYY")}
-    //     </p>
-    //   ),
-    // },
   ];
 
   componentDidMount() {
@@ -164,38 +162,70 @@ class Student extends Component {
         };
       })
       .filter((s) => s.code);
-    console.log(newStudentList);
+
     const studentRef = ref(this.database, "students");
+
     runTransaction(studentRef, (students) => {
       const newData = mapKeys(newStudentList, "id");
       return Object.assign(newData, students);
     });
   };
 
+  getDataByFilter = () => {
+    const { filter, data } = this.state;
+    let result = [...data];
+
+    if (filter.studentCode) {
+      result = result.filter((student) =>
+        student.code?.includes?.(filter.studentCode)
+      );
+    }
+
+    if (filter.classroom) {
+      result = result.filter((student) =>
+        student.className?.includes?.(filter.classroom)
+      );
+    }
+
+    return result;
+  };
+
   render() {
-    const { data, loading, total } = this.state;
+    const { loading, filter } = this.state;
+    const filteredData = this.getDataByFilter();
+
     return (
       <React.Fragment>
         <div
           className="example-input"
           style={{ marginTop: 20, marginLeft: 10 }}
         >
-          <RangePicker
-            style={{ margin: "0 0 20px 20px" }}
-            onChange=""
-            bordered={true}
-          />
           <Input
-            defaultValue=""
+            value={filter.studentCode}
             placeholder="Mã số sinh viên"
-            onChange=""
             style={{ width: 150 }}
+            onChange={(event) =>
+              this.setState({
+                filter: {
+                  ...filter,
+                  studentCode: event.target.value,
+                },
+              })
+            }
           />
           <Input
-            defaultValue=""
+            value={filter.classroom}
             placeholder="Lớp"
             onChange=""
             style={{ width: 150 }}
+            onChange={(event) =>
+              this.setState({
+                filter: {
+                  ...filter,
+                  classroom: event.target.value,
+                },
+              })
+            }
           />
           <Button
             className={classes.search}
@@ -222,11 +252,11 @@ class Student extends Component {
         <div className={styles.tableStudent}>
           <Table
             loading={loading}
-            dataSource={data}
+            dataSource={filteredData}
             columns={this.columns}
             pagination={{
               defaultPageSize: 10,
-              total,
+              total: filteredData.length,
               onChange: (page) => this.loadData(page),
             }}
           />
