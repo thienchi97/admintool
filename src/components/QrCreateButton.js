@@ -1,13 +1,22 @@
 import React, { PureComponent } from "react";
-import { Button, Modal, message, Typography, Spin } from "antd";
+import { Button, Modal, message, Typography, Spin, Switch } from "antd";
 import moment from "moment";
-import { getDatabase, onValue, ref, set } from "firebase/database";
+import { getDatabase, onValue, ref, set, update } from "firebase/database";
 import * as uuid from "uuid";
 import QRCode from "react-qr-code";
 import AES from "crypto-js/aes";
+import { omit } from "lodash";
 
-const DISTANCE = 0;
-const ACTIVE_TIME = 1;
+const QR_CONFIG = {
+  OFF: {
+    DISTANCE: 10,
+  },
+  ON: {
+    DISTANCE: 0,
+  },
+};
+
+const ACTIVE_TIME = 30;
 
 class QrCreateButton extends PureComponent {
   state = {
@@ -15,9 +24,10 @@ class QrCreateButton extends PureComponent {
     endTime: null,
     modalVisible: false,
     qrData: null,
-    isCreating: true,
+    isCreating: false,
     latitude: 0,
     longitude: 0,
+    online: false,
   };
 
   qrId = null;
@@ -33,15 +43,19 @@ class QrCreateButton extends PureComponent {
       const data = snapshot.val() || {};
       const existKey = Object.keys(data).find((k) => {
         const attendence = data[k];
-        return moment(currentTime).isBetween(
-          moment(attendence?.startAt),
-          moment(attendence.endAt),
-          undefined,
-          "[]"
+        return (
+          !attendence.expired &&
+          moment(currentTime).isBetween(
+            moment(attendence?.startAt),
+            moment(attendence.endAt),
+            undefined,
+            "[]"
+          )
         );
       });
 
       if (!existKey) return;
+
       this.setState({
         isCreating: false,
         qrData: {
@@ -53,17 +67,10 @@ class QrCreateButton extends PureComponent {
     });
   }
 
-  componentDidUpdate(_, prevState) {
-    if (
-      !prevState.modalVisible &&
-      this.state.modalVisible &&
-      !this.state.qrData
-    ) {
-      this.generateAttendanceQR();
-    }
-  }
-
   generateAttendanceQR = () => {
+    if (this.state.isCreating) return;
+    this.setState({ isCreating: true });
+
     const cbSuccess = (pos) => {
       this.setState(
         {
@@ -77,6 +84,7 @@ class QrCreateButton extends PureComponent {
 
     const cbError = (error) => {
       console.log(error);
+      this.setState({ isCreating: false });
     };
 
     this.getLocationPermission(cbSuccess, cbError);
@@ -102,7 +110,7 @@ class QrCreateButton extends PureComponent {
 
   createAttendanceQR = () => {
     const { classInfo } = this.props;
-    const { latitude, longitude } = this.state;
+    const { latitude, longitude, online } = this.state;
 
     const attendenceId = uuid.v4();
 
@@ -112,7 +120,8 @@ class QrCreateButton extends PureComponent {
     );
 
     const startTime = Date.now();
-    const endTime = moment(startTime).add(ACTIVE_TIME, "week").valueOf();
+    const endTime = moment(startTime).add(ACTIVE_TIME, "minutes").valueOf();
+    const distance = online ? QR_CONFIG.ON.DISTANCE : QR_CONFIG.OFF.DISTANCE;
 
     const dataInsert = {
       id: attendenceId,
@@ -123,7 +132,7 @@ class QrCreateButton extends PureComponent {
       duration: endTime - startTime, // milisecond
       latitude,
       longitude,
-      distance: DISTANCE,
+      distance,
     };
 
     set(attendanceRef, dataInsert)
@@ -131,14 +140,76 @@ class QrCreateButton extends PureComponent {
       .catch(() => message.error("Tạo mả QR thất bại"));
   };
 
-  render() {
+  makeQrExpired = async () => {
+    const { qrData } = this.state;
+    const { classInfo } = this.props;
+    const newData = omit(qrData, ["classId", "attendenceId"]);
+
+    const qrRef = ref(
+      this.database,
+      `/attendence/${classInfo.id}/${qrData.id}`
+    );
+
+    this.setState({ qrData: null });
+
+    try {
+      await update(qrRef, {
+        ...newData,
+        expired: true,
+      });
+
+      message.success("Hủy QR code thành công.");
+    } catch (error) {
+      console.error(error);
+      message.error("Hủy QR code thất bại.");
+    }
+  };
+
+  renderCreateButton = () => {
+    return (
+      <>
+        <Typography.Text type="danger">
+          *Vui lòng cho phép chia sẻ vị trí để tạo QR
+        </Typography.Text>
+        <div className="flex justify-center items-center w-full">
+          <Switch
+            checkedChildren="Online"
+            unCheckedChildren="Offline"
+            checked={this.state.online}
+            onChange={() => this.setState({ online: !this.state.online })}
+          />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px 0px",
+          }}
+        >
+          <Button
+            size="large"
+            type="dashed"
+            onClick={this.generateAttendanceQR}
+          >
+            Tạo QR Code
+          </Button>
+        </div>
+      </>
+    );
+  };
+
+  renderQRCode = () => {
     const { qrData, isCreating } = this.state;
+
     const qrString = JSON.stringify({
       classId: qrData?.classId,
       attendenceId: qrData?.attendenceId,
       latitude: qrData?.latitude,
       longitude: qrData?.longitude,
+      distance: qrData?.distance ?? 0,
     });
+
     const qrEncrypt = qrData
       ? AES.encrypt(
           qrString,
@@ -146,13 +217,37 @@ class QrCreateButton extends PureComponent {
         ).toString()
       : "";
 
+    if (isCreating) return <Spin />;
+
+    return (
+      <div
+        style={{
+          objectFit: "fill",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        <QRCode value={qrEncrypt} size={256} />
+        <Button type="primary" onClick={this.makeQrExpired}>
+          Hủy QR
+        </Button>
+      </div>
+    );
+  };
+
+  render() {
+    const { qrData, isCreating } = this.state;
+
     return (
       <div>
         <Button
           type="primary"
           onClick={() => this.setState({ modalVisible: true })}
         >
-          Tạo mã điểm danh QR code
+          Tạo mã điểm danh
         </Button>
         <Modal
           title="Tạo mã điểm danh"
@@ -165,23 +260,8 @@ class QrCreateButton extends PureComponent {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <Typography.Text type="danger">
-              *Vui lòng cho phép chia sẻ vị trí để tạo QR
-            </Typography.Text>
-            {isCreating || !qrData ? (
-              <Spin />
-            ) : (
-              <div
-                style={{
-                  objectFit: "fill",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <QRCode value={qrEncrypt} size={256} />
-              </div>
-            )}
+            {(qrData || isCreating) && this.renderQRCode()}
+            {!qrData && this.renderCreateButton()}
           </div>
         </Modal>
       </div>

@@ -99,7 +99,6 @@ class User extends Component {
           <span style={{ fontSize: "30px", fontWeight: "bold" }}>
             User admin
           </span>
-          <ButtonAddUser style={{ float: "right", marginRight: 20 }} />
         </div>
         <div style={{ padding: "0px 8px" }}>
           <Table
@@ -113,58 +112,6 @@ class User extends Component {
             }}
           />
         </div>
-        {/* <table className="table table-hover">
-          <tbody>
-            <tr className={classes.backgroundTr}>
-              <th scope="col" className={classes.backgroundTh}>
-                #
-              </th>
-              <th scope="col" className={classes.backgroundTh}>
-                Avatar
-              </th>
-              <th scope="col" className={classes.backgroundTh}>
-                Username
-              </th>
-              <th scope="col" className={classes.backgroundTh}>
-                Full name
-              </th>
-              <th scope="col" className={classes.backgroundTh}>
-                Active
-              </th>
-            </tr>
-
-            <tr>
-              <td className={classes.backgroundTd}>
-                <span> </span>
-              </td>
-              <td className="image">
-                {" "}
-                <img
-                  className="rounded-circle"
-                  style={{ width: 50, height: 50 }}
-                  src={user.photoURL}
-                  alt=" "
-                />{" "}
-              </td>
-              <td
-                className={classes.backgroundTd}
-                style={{ color: "#1890ff", cursor: "pointer" }}
-              >
-                <span> {user.displayName}</span>
-              </td>
-              <td className={classes.backgroundTd} style={{ color: "#52c41a" }}>
-                <span> {user.email} </span>
-              </td>
-              <td>
-                <Switch
-                  checkedChildren={<CheckOutlined />}
-                  unCheckedChildren={<CloseOutlined />}
-                  defaultChecked
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table> */}
       </Fragment>
     );
   }

@@ -10,15 +10,10 @@ import {
   Select,
 } from "antd";
 
-import {
-  getDatabase,
-  onValue,
-  ref,
-  runTransaction,
-  update,
-} from "firebase/database";
+import { getDatabase, ref, update } from "firebase/database";
 import moment from "moment";
 import "firebase/auth";
+
 const { RangePicker } = DatePicker;
 
 const layout = {
@@ -33,50 +28,40 @@ class EditStudent extends PureComponent {
     total: 0,
     modalVisible: false,
   };
-  componentDidMount() {
-    this.loadData();
-  }
 
-  loadData = (currentPage = 1) => {
+  database = getDatabase();
+  formRef = React.createRef();
+
+  componentDidMount() {}
+
+  handleUpdateClass = async (formData) => {
+    const { student } = this.props;
+    const studentRef = ref(this.database, `/students/${student.id}`);
+
     try {
-      this.setState({ loading: true });
-
-      onValue(ref(this.database, `/students`), (snapshot) => {
-        const value = snapshot.val();
-        const total = snapshot.size;
-        const data = Object.keys(value).map((key, index) => ({
-          ...value[key],
-          key: index,
-          createAt: moment().valueOf(),
-        }));
-
-        this.setState({
-          total,
-          data,
-        });
-      });
-
-      this.setState({ loading: false });
+      await update(studentRef, formData);
+      message.success("Cập nhật thông tin sinh viên thành cônng.");
     } catch (error) {
-      this.setState({ loading: false });
+      console.log(error);
+      message.error("Cập nhật thông tin sinh viên thất bại.");
     }
   };
 
   render() {
-    const { data, studen } = this.state;
     const { student } = this.props;
 
     return (
       <div>
         <Button
-          type="text"
+          type="link"
           onClick={() => this.setState({ modalVisible: true })}
         >
-          {student.code}
+          Chỉnh sửa
         </Button>
         <Modal
-          title="chỉnh sửa"
+          title="Chỉnh sửa"
           centered
+          footer={null}
           visible={this.state.modalVisible}
           onCancel={() => this.setState({ modalVisible: false })}
           cancelText="Đóng"
@@ -88,26 +73,45 @@ class EditStudent extends PureComponent {
             {...layout}
             ref={this.formRef}
             name="class-control"
-            onFinish={this.handleAddClass}
+            onFinish={this.handleUpdateClass}
+            initialValues={student}
           >
-            <Form.Item
-              name="subjectCode"
-              label="Mã môn"
-              rules={[
-                {
-                  required: true,
-                  message: "Ma mon bat buoc nhap",
-                },
-              ]}
-            >
+            <Form.Item name="code" label="Mã số">
+              <Input type="text"></Input>
+            </Form.Item>
+            <Form.Item name="displayName" label="Họ tên">
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item name="sex" label="Giới tính">
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item name="className" label="Lớp">
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item name="subjectCode" label="Mã môn học">
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item name="subjectName" label="Tên môn học">
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item name="group" label="Nhóm">
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item name="to" label="Tổ">
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item name="place" label="Cơ sở">
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item name="email" label="Email">
               <Input type="text" />
             </Form.Item>
 
-            <Form.Item style={{ marginLeft: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <Button type="primary" htmlType="submit">
-                Thêm lớp
+                Chỉnh sửa
               </Button>
-            </Form.Item>
+            </div>
           </Form>
         </Modal>
       </div>

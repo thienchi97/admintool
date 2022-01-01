@@ -35,20 +35,13 @@ class Student extends Component {
       title: "Mã số",
       dataIndex: "code",
       key: "code",
-      render: (code, student) => {
-        return <EditStudent student={student} />;
-      },
     },
     {
-      title: "Họ lót",
-      dataIndex: "lname",
-      key: "lname",
+      title: "Họ Tên",
+      dataIndex: "displayName",
+      key: "displayName",
     },
-    {
-      title: "Tên",
-      dataIndex: "fname",
-      key: "fname",
-    },
+
     {
       title: "Giới tính",
       dataIndex: "sex",
@@ -89,6 +82,14 @@ class Student extends Component {
       dataIndex: "email",
       key: "email",
     },
+    {
+      title: "Chỉnh sửa",
+      dataIndex: "edit",
+      key: "edit",
+      render: (code, student) => {
+        return <EditStudent student={student} />;
+      },
+    },
   ];
 
   componentDidMount() {
@@ -100,7 +101,7 @@ class Student extends Component {
       this.setState({ loading: true });
 
       onValue(ref(this.database, `/students`), (snapshot) => {
-        const value = snapshot.val();
+        const value = snapshot.val() || {};
         const total = snapshot.size;
         const data = Object.keys(value).map((key, index) => ({
           ...value[key],
@@ -148,8 +149,8 @@ class Student extends Component {
       .map((s) => {
         return {
           code: s["Mã số"],
-          lname: s["Họ lót"],
-          fname: s["Tên"],
+          displayName: s["Họ lót"] + " " + s["Tên"],
+
           sex: s["Phái"],
           className: s["Lớp"],
           subjectCode: s["Mã MH"],

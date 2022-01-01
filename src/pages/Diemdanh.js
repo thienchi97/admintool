@@ -1,13 +1,11 @@
-import React, { useState, Component } from "react";
-import { withRouter } from "react-router-dom";
-import { Input, Select, Button, Modal, Table } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
-import * as classes from "./Table.module.css";
-import QRCode from "react-qr-code";
-import firebase from "firebase/compat";
-import "firebase/auth";
-import { getDatabase, onValue, ref } from "firebase/database";
+import React, { Component } from "react";
 import moment from "moment";
+import { withRouter } from "react-router-dom";
+import { Table } from "antd";
+import { getDatabase, onValue, ref } from "firebase/database";
+import { values } from "lodash";
+import DanhsachDiemDanh from "../components/DanhsachDiemDanh";
+import AttendanceClassName from "../components/AttendanceClassName";
 
 class Diemdanh extends Component {
   state = {
@@ -22,29 +20,58 @@ class Diemdanh extends Component {
 
   columns = [
     {
-      title: "Created At",
-      dataIndex: "createdAt",
+      title: "Thời gian tạo",
       key: "createdAt",
-      render: (createdAt) => (
-        <p style={{ marginBottom: 0 }}>
-          {moment(createdAt).format("HH:mm DD/MM/YYYY")}
-        </p>
-      ),
+      dataIndex: "createAt",
+      render: (createAt) => {
+        if (!createAt) return null;
+
+        return (
+          <p style={{ marginBottom: 0 }}>
+            {moment(createAt).format("HH:mm DD/MM/YYYY")}
+          </p>
+        );
+      },
     },
     {
-      title: "duration",
-      dataIndex: "duration",
-      key: "duration",
+      title: "ID lớp học",
+      dataIndex: "classId",
+      key: "classId",
     },
     {
-      title: "Start at",
-      dataIndex: "startAt",
-      key: "startAt",
+      title: "Tên lớp học",
+      key: "className",
+      render: (record) => {
+        return (
+          <AttendanceClassName key={record.classId} classId={record.classId} />
+        );
+      },
     },
     {
-      title: "end at",
-      dataIndex: "endAt",
-      key: "endAt",
+      title: "Trạng thái",
+      key: "status",
+      render: (record) => {
+        const isActive = moment(Date.now()).isBetween(
+          moment(record.startAt),
+          moment(record.endAt),
+          undefined,
+          "[]"
+        );
+
+        return (
+          <p style={{ marginBottom: 0 }}>
+            {isActive ? "Còn hiệu lực" : "Hết hiệu lực"}
+          </p>
+        );
+      },
+    },
+    {
+      title: "Danh sách điểm danh",
+      dataIndex: "attendenced",
+      key: "attendenced",
+      render: (attendenced) => {
+        return <DanhsachDiemDanh attendenced={attendenced} />;
+      },
     },
   ];
 
@@ -56,27 +83,16 @@ class Diemdanh extends Component {
     try {
       this.setState({ loading: true });
 
-      onValue(
-        ref(this.database, `/attendence`),
-        (snapshot) => {
-          const value = snapshot.val();
-          const total = snapshot.size;
-          console.log(value);
-          const data = Object.keys(value).map((key, index) => ({
-            ...value[key],
-            key: index,
-            createAt: moment().valueOf(),
-          }));
+      onValue(ref(this.database, `/attendence`), (snapshot) => {
+        const value = snapshot.val() || {};
 
-          this.setState({
-            total,
-            data,
-          });
-        },
-        {
-          onlyOnce: true,
-        }
-      );
+        const result = Object.keys(value).map((key) => {
+          const attendanceData = values(value[key]);
+          return attendanceData.map((a) => ({ ...a, classId: key }));
+        });
+
+        this.setState({ data: result.flat() });
+      });
 
       this.setState({ loading: false });
     } catch (error) {
@@ -100,42 +116,17 @@ class Diemdanh extends Component {
         <div
           className="example-input"
           style={{ marginTop: 20, marginLeft: 10 }}
-        >
-          <Select
-            className={classes.paymentMethod}
-            style={{ width: 50 }}
-            defaultValue="Khoa"
-            onChange=""
-          ></Select>
-          <Select
-            className={classes.paymentMethod}
-            style={{ width: 50 }}
-            defaultValue="Lớp"
-            onChange=""
-          ></Select>
-          <Select
-            className={classes.paymentMethod}
-            style={{ width: 50 }}
-            defaultValue=""
-          ></Select>
-          <Button
-            className={classes.search}
-            type="primary"
-            icon={<SearchOutlined />}
-          >
-            Tìm kiếm
-          </Button>
-        </div>
+        ></div>
 
         <div style={{ padding: "0px 8px" }}>
           <Table
             loading={loading}
             dataSource={data}
             columns={this.columns}
+            h
             pagination={{
               defaultPageSize: 5,
               total,
-              onChange: (page) => this.loadData(page),
             }}
           />
         </div>

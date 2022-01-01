@@ -6,12 +6,12 @@ import Layout from "./components/LayoutMain";
 import Student from "./pages/Student";
 import User from "./pages/User";
 import Class from "./pages/Class";
-import { getDatabase, onValue, ref, set, update } from "firebase/database";
+import { getDatabase, onValue, ref, update } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { cloneDeep, isPlainObject } from "lodash";
-import { firebaseUUID } from "./utils";
+import { isPlainObject } from "lodash";
 import RequestApproval from "./pages/RequestApproval";
-
+import Diemdanh from "./pages/Diemdanh";
+import UserInfoProvider from "./providers/UserInfoProvider";
 class App extends React.Component {
   auth = getAuth();
   database = getDatabase();
@@ -122,40 +122,50 @@ class App extends React.Component {
 
     if (!isRoot && isAccept)
       return (
+        <UserInfoProvider>
+          <Switch>
+            <Route path="/">
+              <Layout isShowUserMenu={false}>
+                <Switch>
+                  <Route path="/diemdanh">
+                    <Diemdanh />
+                  </Route>
+                  <Route path="/class">
+                    <Class />
+                  </Route>
+                  <Route path="/student">
+                    <Student />
+                  </Route>
+                </Switch>
+              </Layout>
+            </Route>
+          </Switch>
+        </UserInfoProvider>
+      );
+
+    return (
+      <UserInfoProvider>
         <Switch>
           <Route path="/">
-            <Layout isShowUserMenu={false}>
+            <Layout>
               <Switch>
+                <Route path="/diemdanh">
+                  <Diemdanh />
+                </Route>
                 <Route path="/class">
                   <Class />
                 </Route>
                 <Route path="/student">
                   <Student />
                 </Route>
+                <Route path="/user">
+                  <User />
+                </Route>
               </Switch>
             </Layout>
           </Route>
         </Switch>
-      );
-
-    return (
-      <Switch>
-        <Route path="/">
-          <Layout>
-            <Switch>
-              <Route path="/class">
-                <Class />
-              </Route>
-              <Route path="/student">
-                <Student />
-              </Route>
-              <Route path="/user">
-                <User />
-              </Route>
-            </Switch>
-          </Layout>
-        </Route>
-      </Switch>
+      </UserInfoProvider>
     );
   }
 }

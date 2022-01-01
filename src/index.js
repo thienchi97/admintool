@@ -1,11 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import "antd/dist/antd.css";
 import "./index.css";
+import "antd/dist/antd.css";
 import App from "./App";
-import { BrowserRouter } from "react-router-dom";
-
 import * as serviceWorker from "./serviceWorker";
+import { BrowserRouter } from "react-router-dom";
 
 import firebase from "firebase/compat/app";
 import "firebase/compat/auth";

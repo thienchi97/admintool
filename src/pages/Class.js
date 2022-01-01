@@ -1,15 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import {
-  Select,
-  Button,
-  Modal,
-  Table,
-  DatePicker,
-  Space,
-  message,
-  Input,
-} from "antd";
+import { Button, Table, Space, message, Input } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import * as classes from "./Table.module.css";
 import InputFiles from "react-input-files";
@@ -17,12 +8,11 @@ import "firebase/auth";
 import moment from "moment";
 import QrCreateButton from "../components/QrCreateButton";
 import ButtonAdd from "../components/ButtonAddClass";
-import { mapKeys, unionBy } from "lodash";
+import { cloneDeep, mapKeys, unionBy, values } from "lodash";
 import Papa from "papaparse";
 import { firebaseUUID } from "../utils";
 import { getDatabase, onValue, ref, runTransaction } from "firebase/database";
-
-const { RangePicker } = DatePicker;
+import ApproveJoinClassButton from "../components/ApproveJoinClassButton";
 
 class Class extends Component {
   state = {
@@ -78,10 +68,10 @@ class Class extends Component {
     },
     {
       title: "Giảng viên",
-      dataIndex: "teacher",
+      dataIndex: "teacherObject",
       key: "teacher",
       render: (teacher) => {
-        return teacher.displayName;
+        return teacher?.displayName;
       },
     },
     {
@@ -99,7 +89,12 @@ class Class extends Component {
       dataIndex: null,
       key: "QrCode",
       render: (classInfo) => {
-        return <QrCreateButton classInfo={classInfo} />;
+        return (
+          <Space key={classInfo?.id} size={"middle"}>
+            <QrCreateButton classInfo={classInfo} />
+            <ApproveJoinClassButton classInfo={classInfo} />
+          </Space>
+        );
       },
     },
   ];
@@ -114,12 +109,12 @@ class Class extends Component {
     this.loadData();
   }
 
-  loadData = (currentPage = 1) => {
+  loadData = () => {
     try {
       this.setState({ loading: true });
 
       onValue(ref(this.database, `/classroom`), (snapshot) => {
-        const value = snapshot.val();
+        const value = snapshot.val() || {};
         const total = snapshot.size;
         const data = Object.keys(value).map((key, index) => ({
           ...value[key],
@@ -175,9 +170,10 @@ class Class extends Component {
         subjectName: s["Tên môn"] || "",
         tiet: s["Tiết"] || "",
         room: s["Phòng"] || "",
-        teacher: {
-          displayName: s["Giảng viên"],
-          email: s["Email TDTU"],
+        teacher: teacherId,
+        teacherObject: {
+          displayName: s["Giảng viên"] || "",
+          email: s["Email TDTU"] || "",
           isAccept: true,
           id: teacherId,
         },
@@ -190,19 +186,19 @@ class Class extends Component {
 
     const newTeacherList = unionBy(
       newClassroomList.map((c) => {
-        return c.teacher;
+        return c.teacherObject;
       }),
       "email"
     );
 
     const teachersRef = ref(this.database, "teachers");
-    const classroomRef = ref(this.database, "classroom");
+    const classroomRef = ref(this.database, "/classroom");
 
     // Them lop vao database
     runTransaction(classroomRef, (classroom) => {
       const newData = mapKeys(newClassroomList, "id");
-      return Object.assign(classroom, newData);
-    });
+      return Object.assign(classroom || {}, newData);
+    }).catch(console.log);
 
     // Them giao vien vao database
     runTransaction(teachersRef, (teachers = {}) => {
@@ -212,7 +208,7 @@ class Class extends Component {
       );
       const newData = mapKeys(newTeacherData, "id");
       return Object.assign(teachers, newData);
-    });
+    }).catch(console.log);
   };
 
   setModal1Visible(modal1Visible) {
@@ -243,7 +239,7 @@ class Class extends Component {
   render() {
     const { loading, filter } = this.state;
     const filteredData = this.getDataByFilter();
-    console.log("render");
+
     return (
       <React.Fragment>
         <div
