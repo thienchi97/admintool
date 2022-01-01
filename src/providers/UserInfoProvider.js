@@ -27,7 +27,6 @@ class UserInfoProvider extends React.Component {
   }
 
   render() {
-    console.log(this.state);
     return (
       <UserInfoContext.Provider value={this.state}>
         {this.props.children}

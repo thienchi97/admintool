@@ -8,7 +8,7 @@ import "firebase/auth";
 import moment from "moment";
 import QrCreateButton from "../components/QrCreateButton";
 import ButtonAdd from "../components/ButtonAddClass";
-import { cloneDeep, mapKeys, unionBy, values } from "lodash";
+import { mapKeys, values } from "lodash";
 import Papa from "papaparse";
 import { firebaseUUID } from "../utils";
 import { getDatabase, onValue, ref, runTransaction } from "firebase/database";
@@ -99,12 +99,6 @@ class Class extends Component {
     },
   ];
 
-  onChange1 = (value, dateString) => {};
-
-  onOk1 = (value) => {
-    console.log("onOk: ", value);
-  };
-
   componentDidMount() {
     this.loadData();
   }
@@ -157,12 +151,31 @@ class Class extends Component {
     });
   };
 
-  handleAddListClass = (classroom = []) => {
-    const newClassroomList = classroom.map((s) => {
-      const classId = firebaseUUID();
-      const teacherId = firebaseUUID();
+  handleAddListClass = async (classroom = []) => {
+    const newTeacherList = [];
+    const newClassroomList = [];
 
-      return {
+    for (const s of classroom) {
+      const classId = firebaseUUID();
+      const teacherExist = newTeacherList.find(
+        (t) => t.email === s["Email TDTU"]
+      );
+      let teacherData = {
+        displayName: s["Giảng viên"] || "",
+        email: s["Email TDTU"] || "",
+        isAccept: true,
+        id: firebaseUUID(),
+      };
+
+      if (teacherExist) {
+        teacherData = teacherExist;
+      }
+
+      if (!teacherExist) {
+        newTeacherList.push(teacherData);
+      }
+
+      newClassroomList.push({
         subjectCode: s["Mã MH"] || "",
         group: s["Nhóm"] || "",
         to: s["Tổ"] || "",
@@ -170,45 +183,45 @@ class Class extends Component {
         subjectName: s["Tên môn"] || "",
         tiet: s["Tiết"] || "",
         room: s["Phòng"] || "",
-        teacher: teacherId,
-        teacherObject: {
-          displayName: s["Giảng viên"] || "",
-          email: s["Email TDTU"] || "",
-          isAccept: true,
-          id: teacherId,
-        },
+        teacher: teacherData.id,
+        teacherObject: teacherData,
         place: s["Cơ sở MH"] || "",
         email: s["Email cá nhân"] || "",
         emailTDT: s["Email TDTU"] || "",
         id: classId,
-      };
-    });
-
-    const newTeacherList = unionBy(
-      newClassroomList.map((c) => {
-        return c.teacherObject;
-      }),
-      "email"
-    );
+      });
+    }
 
     const teachersRef = ref(this.database, "teachers");
-    const classroomRef = ref(this.database, "/classroom");
+    const classroomRef = ref(this.database, "classroom");
+
+    try {
+      // Them giao vien vao database
+      const data = await runTransaction(teachersRef, (currentData) => {
+        const teacherEmailExt = values(currentData).map((t) => t.email);
+        const newTeacherData = newTeacherList.filter(
+          (t) => !teacherEmailExt.includes(t.email)
+        );
+        const newData = mapKeys(newTeacherData, "id");
+        return Object.assign(currentData || {}, newData);
+      });
+
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
 
     // Them lop vao database
-    runTransaction(classroomRef, (classroom) => {
-      const newData = mapKeys(newClassroomList, "id");
-      return Object.assign(classroom || {}, newData);
-    }).catch(console.log);
+    try {
+      const data = await runTransaction(classroomRef, (currentData) => {
+        const newData = mapKeys(newClassroomList, "id");
+        return Object.assign(currentData || {}, newData);
+      });
 
-    // Them giao vien vao database
-    runTransaction(teachersRef, (teachers = {}) => {
-      const teacherEmailExt = Object.values(teachers).map((t) => t.email);
-      const newTeacherData = newTeacherList.filter(
-        (t) => !teacherEmailExt.includes(t.email)
-      );
-      const newData = mapKeys(newTeacherData, "id");
-      return Object.assign(teachers, newData);
-    }).catch(console.log);
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   setModal1Visible(modal1Visible) {
@@ -218,6 +231,7 @@ class Class extends Component {
   setModal2Visible(modal2Visible) {
     this.setState({ modal2Visible });
   }
+
   getDataByFilter = () => {
     const { filter, data } = this.state;
     let result = [...data];
@@ -236,6 +250,7 @@ class Class extends Component {
 
     return result;
   };
+
   render() {
     const { loading, filter } = this.state;
     const filteredData = this.getDataByFilter();
