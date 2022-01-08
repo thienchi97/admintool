@@ -74,17 +74,17 @@ class ButtonAddClass extends PureComponent {
       day: classroom.day,
       subjectName: classroom.subjectName,
       tiet: classroom.tiet,
-
       id: id,
       room: classroom.room,
-      teacher: teacher,
+      teacher: teacher.id,
+      teacherObject: teacher,
       email: classroom.email,
       emailTDT: classroom.emailTDT,
       startAt: start.valueOf(),
       endAt: end.valueOf(),
       pending: {},
     };
-    console.log(dataInsert);
+
     update(classroomRef, {
       [id]: dataInsert,
     })

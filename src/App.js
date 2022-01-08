@@ -136,6 +136,7 @@ class App extends React.Component {
                   <Route path="/student">
                     <Student />
                   </Route>
+                  <Redirect to={"/diemdanh"} />
                 </Switch>
               </Layout>
             </Route>
@@ -161,6 +162,7 @@ class App extends React.Component {
                 <Route path="/user">
                   <User />
                 </Route>
+                <Redirect to={"/diemdanh"} />
               </Switch>
             </Layout>
           </Route>

@@ -13,6 +13,7 @@ import Papa from "papaparse";
 import { firebaseUUID } from "../utils";
 import { getDatabase, onValue, ref, runTransaction } from "firebase/database";
 import ApproveJoinClassButton from "../components/ApproveJoinClassButton";
+import { UserInfoContext } from "../providers/UserInfoProvider";
 
 class Class extends Component {
   state = {
@@ -108,16 +109,18 @@ class Class extends Component {
       this.setState({ loading: true });
 
       onValue(ref(this.database, `/classroom`), (snapshot) => {
-        const value = snapshot.val() || {};
-        const total = snapshot.size;
-        const data = Object.keys(value).map((key, index) => ({
-          ...value[key],
-          key: index,
-          createAt: moment().valueOf(),
-        }));
+        let data = values(snapshot.val());
+        const { isRoot, classManaged = [] } = this.context;
+
+        if (!isRoot) {
+          data = data.filter((d) => {
+            const classExist = classManaged.find((c) => c.id === d.id);
+            return !!classExist;
+          });
+        }
 
         this.setState({
-          total,
+          total: data.length,
           data,
         });
       });
@@ -322,5 +325,7 @@ class Class extends Component {
     );
   }
 }
+
+Class.contextType = UserInfoContext;
 
 export default withRouter(Class);

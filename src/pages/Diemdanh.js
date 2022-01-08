@@ -6,6 +6,7 @@ import { getDatabase, onValue, ref } from "firebase/database";
 import { values } from "lodash";
 import DanhsachDiemDanh from "../components/DanhsachDiemDanh";
 import AttendanceClassName from "../components/AttendanceClassName";
+import { UserInfoContext } from "../providers/UserInfoProvider";
 
 class Diemdanh extends Component {
   state = {
@@ -85,13 +86,23 @@ class Diemdanh extends Component {
 
       onValue(ref(this.database, `/attendence`), (snapshot) => {
         const value = snapshot.val() || {};
+        const { isRoot, classManaged = [] } = this.context;
 
         const result = Object.keys(value).map((key) => {
           const attendanceData = values(value[key]);
           return attendanceData.map((a) => ({ ...a, classId: key }));
         });
 
-        this.setState({ data: result.flat() });
+        let data = result.flat();
+
+        if (!isRoot) {
+          data = data.filter((d) => {
+            const classExist = classManaged.find((c) => c.id === d.classId);
+            return !!classExist;
+          });
+        }
+
+        this.setState({ data });
       });
 
       this.setState({ loading: false });
@@ -134,5 +145,7 @@ class Diemdanh extends Component {
     );
   }
 }
+
+Diemdanh.contextType = UserInfoContext;
 
 export default withRouter(Diemdanh);

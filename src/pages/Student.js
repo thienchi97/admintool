@@ -1,20 +1,24 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { Input, DatePicker, Select, Button, Table, message } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { Input, Button, Table, message } from "antd";
+
 import * as classes from "./Table.module.css";
 import "firebase/auth";
-import { getDatabase, onValue, ref, runTransaction } from "firebase/database";
-import moment from "moment";
+import {
+  getDatabase,
+  onValue,
+  ref,
+  runTransaction,
+  remove,
+} from "firebase/database";
 import styles from "./Student.module.css";
 import InputFiles from "react-input-files";
-import * as XLSX from "xlsx";
 import { firebaseUUID } from "../utils";
-import { mapKeys } from "lodash";
+import { mapKeys, trim, values } from "lodash";
 import Papa from "papaparse";
 import EditStudent from "../components/EditStudent";
-
-const { RangePicker } = DatePicker;
+import { UserInfoContext } from "../providers/UserInfoProvider";
+import ButtonAddStudent from "../components/ButtonAddStudent";
 
 class Student extends Component {
   state = {
@@ -90,6 +94,23 @@ class Student extends Component {
         return <EditStudent student={student} />;
       },
     },
+
+    {
+      title: "Xóa",
+
+      key: "delete",
+      render: (student) => {
+        return (
+          <Button
+            type="primary"
+            danger
+            onClick={() => this.handleDelete(student)}
+          >
+            Xóa
+          </Button>
+        );
+      },
+    },
   ];
 
   componentDidMount() {
@@ -101,16 +122,27 @@ class Student extends Component {
       this.setState({ loading: true });
 
       onValue(ref(this.database, `/students`), (snapshot) => {
-        const value = snapshot.val() || {};
-        const total = snapshot.size;
-        const data = Object.keys(value).map((key, index) => ({
-          ...value[key],
-          key: index,
-          createAt: moment().valueOf(),
-        }));
+        let data = values(snapshot.val());
+        const { isRoot, classManaged = [] } = this.context;
+
+        if (!isRoot) {
+          data = data.filter((s) => {
+            const classExist = classManaged.find((c) => {
+              const isSameSubjectCode =
+                trim(s.subjectCode) === trim(c.subjectCode);
+              const isSameGroup =
+                parseInt(`${s.group}`) === parseInt(`${c.group}`);
+              const isSameTo = parseInt(`${s.to}`) === parseInt(`${c.to}`);
+
+              return isSameSubjectCode && isSameGroup && isSameTo;
+            });
+
+            return !!classExist;
+          });
+        }
 
         this.setState({
-          total,
+          total: data.length,
           data,
         });
       });
@@ -119,6 +151,11 @@ class Student extends Component {
     } catch (error) {
       this.setState({ loading: false });
     }
+  };
+  handleDelete = (student) => {
+    const studentRef = ref(this.database, `/students/${student.id}`);
+
+    remove(studentRef);
   };
 
   handleFileUpload = (files) => {
@@ -217,7 +254,6 @@ class Student extends Component {
           <Input
             value={filter.classroom}
             placeholder="Lớp"
-            onChange=""
             style={{ width: 150 }}
             onChange={(event) =>
               this.setState({
@@ -228,12 +264,8 @@ class Student extends Component {
               })
             }
           />
-          <Button
-            className={classes.search}
-            type="primary"
-            icon={<SearchOutlined />}
-          >
-            Tìm kiếm
+          <Button type="link">
+            <ButtonAddStudent />
           </Button>
 
           <InputFiles accept=".csv" onChange={this.handleFileUpload}>
@@ -266,4 +298,7 @@ class Student extends Component {
     );
   }
 }
+
+Student.contextType = UserInfoContext;
+
 export default withRouter(Student);

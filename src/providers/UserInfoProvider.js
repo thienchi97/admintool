@@ -1,32 +1,80 @@
 import * as React from "react";
 import { getAuth } from "firebase/auth";
-import { getDatabase, onValue, ref } from "firebase/database";
+import { get, getDatabase, onValue, query, ref } from "firebase/database";
 import { values } from "lodash";
+import { Spin } from "antd";
 
-const UserInfoContext = React.createContext();
+export const UserInfoContext = React.createContext();
 
 class UserInfoProvider extends React.Component {
   auth = getAuth();
   database = getDatabase();
 
   state = {
-    isRoot: !!this.auth.currentUser.isRoot,
+    loading: true,
+    isRoot: false,
     classManaged: [],
   };
 
-  componentDidMount() {
+  async componentDidMount() {
+    let isRootTeacher = false;
+    const email = this.auth.currentUser.email;
     const user = this.auth.currentUser;
     const classRef = ref(this.database, "classroom");
+    const teacherRef = ref(this.database, "teachers");
 
-    onValue(classRef, (snapshot) => {
-      const data = values(snapshot.val());
-      this.setState({
-        classManaged: data.filter((d) => d?.teacher?.email === user.email),
-      });
-    });
+    try {
+      const teacherList = await get(query(teacherRef));
+      const teacherListArr = values(teacherList.val());
+      isRootTeacher =
+        teacherListArr.findIndex((t) => t.email === email && !!t.root) > -1;
+    } catch (error) {
+      console.log(error);
+    }
+
+    this.unsubscribe = onValue(
+      classRef,
+      (snapshot) => {
+        const data = values(snapshot.val());
+        this.setState({
+          loading: false,
+          isRoot: isRootTeacher,
+          classManaged: data.filter(
+            (d) => d?.teacherObject?.email === user.email
+          ),
+        });
+      },
+      () => {
+        this.setState({
+          loading: false,
+          isRoot: isRootTeacher,
+          classManaged: [],
+        });
+      }
+    );
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe?.();
   }
 
   render() {
+    if (this.state.loading) {
+      return (
+        <div
+          style={{
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Spin></Spin>
+        </div>
+      );
+    }
+
     return (
       <UserInfoContext.Provider value={this.state}>
         {this.props.children}
