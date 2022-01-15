@@ -39,9 +39,9 @@ class UserInfoProvider extends React.Component {
         this.setState({
           loading: false,
           isRoot: isRootTeacher,
-          classManaged: data.filter(
-            (d) => d?.teacherObject?.email === user.email
-          ),
+          classManaged: isRootTeacher
+            ? data
+            : data.filter((d) => d?.teacherObject?.email === user.email),
         });
       },
       () => {

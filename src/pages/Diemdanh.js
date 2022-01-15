@@ -70,8 +70,13 @@ class Diemdanh extends Component {
       title: "Danh sách điểm danh",
       dataIndex: "attendenced",
       key: "attendenced",
-      render: (attendenced) => {
-        return <DanhsachDiemDanh attendenced={attendenced} />;
+      render: (attendenced, record) => {
+        return (
+          <DanhsachDiemDanh
+            attendenced={attendenced}
+            classId={record.classId}
+          />
+        );
       },
     },
   ];

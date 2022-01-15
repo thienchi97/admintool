@@ -1,36 +1,73 @@
 import React, { Component, PureComponent } from "react";
-import { Button, Modal, message, Typography, Spin, List, Avatar } from "antd";
-import { getDatabase, onValue, ref } from "firebase/database";
+import {
+  Button,
+  Modal,
+  message,
+  Typography,
+  Spin,
+  List,
+  Avatar,
+  Input,
+} from "antd";
+import { get, getDatabase, onValue, query, ref } from "firebase/database";
 import values from "lodash/values";
+import { SearchOutlined } from "@ant-design/icons";
 
 class DanhsachDiemDanh extends PureComponent {
   state = {
+    studentCode: "",
     allStudents: [],
     modalVisible: false,
   };
 
   database = getDatabase();
 
-  componentDidMount() {
+  async componentDidMount() {
+    const { classId } = this.props;
+    const classRef = ref(this.database, `classroom/${classId}`);
     const studentsRef = ref(this.database, "students");
+
+    const classData = (await get(query(classRef))).val();
+    const { students = [] } = classData || {};
 
     onValue(studentsRef, (snapshot) => {
       this.setState({
-        allStudents: values(snapshot.val()),
+        allStudents: values(snapshot.val()).filter((s) =>
+          students.includes(s.id)
+        ),
       });
     });
   }
 
-  getAttendencedStudents = () => {
-    const { allStudents } = this.state;
+  checkStudentAttendaced = (studentId) => {
     const { attendenced = [] } = this.props;
     const studentIds = attendenced.map((a) => a.id);
 
-    return allStudents.filter((s) => studentIds.includes(s.id));
+    return studentIds.includes(studentId);
   };
 
   render() {
-    const attendencedStudents = this.getAttendencedStudents();
+    let { allStudents, studentCode } = this.state;
+
+    if (studentCode) {
+      allStudents = allStudents.filter(
+        (s) => s.code?.includes?.(studentCode) || studentCode.includes(s.code)
+      );
+    }
+
+    const HeaderCustom = (
+      <div>
+        <div>Danh sách điểm danh</div>
+        <Input
+          placeholder="Mã sinh viên"
+          prefix={<SearchOutlined />}
+          style={{
+            width: "200px",
+          }}
+          onChange={(e) => this.setState({ studentCode: e.target.value })}
+        />
+      </div>
+    );
 
     return (
       <div>
@@ -41,7 +78,7 @@ class DanhsachDiemDanh extends PureComponent {
           Danh sách
         </Button>
         <Modal
-          title="Danh sách sinh viên điểm danh"
+          title={HeaderCustom}
           centered
           visible={this.state.modalVisible}
           onCancel={() => this.setState({ modalVisible: false })}
@@ -49,17 +86,22 @@ class DanhsachDiemDanh extends PureComponent {
           okButtonProps={{
             hidden: true,
           }}
+          bodyStyle={{
+            maxHeight: "80vh",
+            overflowY: "auto",
+          }}
         >
-          {attendencedStudents.length ? (
+          {allStudents.length ? (
             <List
               itemLayout="horizontal"
-              dataSource={attendencedStudents}
+              dataSource={allStudents}
               renderItem={(item) => (
                 <List.Item>
                   <List.Item.Meta
                     title={item.displayName}
                     description={`Mã sinh viên: ${item.code || ""}`}
                   />
+                  {this.checkStudentAttendaced(item.id) && <div>check</div>}
                 </List.Item>
               )}
             />

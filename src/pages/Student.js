@@ -14,11 +14,12 @@ import {
 import styles from "./Student.module.css";
 import InputFiles from "react-input-files";
 import { firebaseUUID } from "../utils";
-import { mapKeys, trim, values } from "lodash";
+import { groupBy, mapKeys, trim, unionBy, values } from "lodash";
 import Papa from "papaparse";
 import EditStudent from "../components/EditStudent";
 import { UserInfoContext } from "../providers/UserInfoProvider";
 import ButtonAddStudent from "../components/ButtonAddStudent";
+import InfoStudentButton from "../components/InfoStudentButton";
 
 class Student extends Component {
   state = {
@@ -44,6 +45,15 @@ class Student extends Component {
       title: "Họ Tên",
       dataIndex: "displayName",
       key: "displayName",
+      render: (displayName, record) => {
+        return (
+          <InfoStudentButton
+            key={record.code}
+            displayName={displayName}
+            record={record}
+          />
+        );
+      },
     },
 
     {
@@ -131,8 +141,10 @@ class Student extends Component {
               const isSameSubjectCode =
                 trim(s.subjectCode) === trim(c.subjectCode);
               const isSameGroup =
+                s.group == c.group ||
                 parseInt(`${s.group}`) === parseInt(`${c.group}`);
-              const isSameTo = parseInt(`${s.to}`) === parseInt(`${c.to}`);
+              const isSameTo =
+                s.to == c.to || parseInt(`${s.to}`) === parseInt(`${c.to}`);
 
               return isSameSubjectCode && isSameGroup && isSameTo;
             });
@@ -142,8 +154,8 @@ class Student extends Component {
         }
 
         this.setState({
+          data: data,
           total: data.length,
-          data,
         });
       });
 

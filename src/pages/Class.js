@@ -192,6 +192,8 @@ class Class extends Component {
         email: s["Email cá nhân"] || "",
         emailTDT: s["Email TDTU"] || "",
         id: classId,
+        tongtiet: s["Tổng tiết"],
+        siso: s["Sỉ số"],
       });
     }
 

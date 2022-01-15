@@ -6,9 +6,17 @@ import Layout from "./components/LayoutMain";
 import Student from "./pages/Student";
 import User from "./pages/User";
 import Class from "./pages/Class";
-import { getDatabase, onValue, ref, update } from "firebase/database";
+import {
+  get,
+  getDatabase,
+  onValue,
+  query,
+  ref,
+  set,
+  update,
+} from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { isPlainObject } from "lodash";
+import { isPlainObject, mapKeys, trim, values } from "lodash";
 import RequestApproval from "./pages/RequestApproval";
 import Diemdanh from "./pages/Diemdanh";
 import UserInfoProvider from "./providers/UserInfoProvider";
@@ -27,15 +35,12 @@ class App extends React.Component {
   componentDidMount() {
     const teacherRef = ref(this.database, `/teachers`);
     const self = this;
-
     this.unSubcribeTeachers = onValue(teacherRef, (snapshot) => {
       const value = isPlainObject(snapshot.val()) ? snapshot.val() : {};
-
       this.teacherData = Object.keys(value).map((k) => ({
         id: k,
         ...value[k],
       }));
-
       self.initAuth();
     });
   }
