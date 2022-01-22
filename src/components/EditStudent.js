@@ -83,8 +83,12 @@ class EditStudent extends PureComponent {
               <Input type="text" />
             </Form.Item>
             <Form.Item name="sex" label="Giới tính">
-              <Input type="text" />
+              <Select defaultValue="">
+                <Option value="Nam">Nam</Option>
+                <Option value="Nữ">Nữ</Option>
+              </Select>
             </Form.Item>
+
             <Form.Item name="className" label="Lớp">
               <Input type="text" />
             </Form.Item>

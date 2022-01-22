@@ -1,17 +1,8 @@
-import React, { Component, PureComponent } from "react";
-import {
-  Button,
-  Modal,
-  message,
-  Typography,
-  Spin,
-  List,
-  Avatar,
-  Input,
-} from "antd";
+import React, { PureComponent } from "react";
+import { Button, Modal, Typography, List, Input } from "antd";
 import { get, getDatabase, onValue, query, ref } from "firebase/database";
 import values from "lodash/values";
-import { SearchOutlined } from "@ant-design/icons";
+import { CheckOutlined, SearchOutlined } from "@ant-design/icons";
 
 class DanhsachDiemDanh extends PureComponent {
   state = {
@@ -26,7 +17,6 @@ class DanhsachDiemDanh extends PureComponent {
     const { classId } = this.props;
     const classRef = ref(this.database, `classroom/${classId}`);
     const studentsRef = ref(this.database, "students");
-
     const classData = (await get(query(classRef))).val();
     const { students = [] } = classData || {};
 
@@ -101,7 +91,11 @@ class DanhsachDiemDanh extends PureComponent {
                     title={item.displayName}
                     description={`Mã sinh viên: ${item.code || ""}`}
                   />
-                  {this.checkStudentAttendaced(item.id) && <div>check</div>}
+                  {this.checkStudentAttendaced(item.id) && (
+                    <div>
+                      <CheckOutlined />
+                    </div>
+                  )}
                 </List.Item>
               )}
             />

@@ -73,6 +73,7 @@ class Diemdanh extends Component {
       render: (attendenced, record) => {
         return (
           <DanhsachDiemDanh
+            key={record.id}
             attendenced={attendenced}
             classId={record.classId}
           />
@@ -98,7 +99,9 @@ class Diemdanh extends Component {
           return attendanceData.map((a) => ({ ...a, classId: key }));
         });
 
-        let data = result.flat();
+        let data = result.flat().sort((a, b) => {
+          return a.createAt - b.createAt;
+        });
 
         if (!isRoot) {
           data = data.filter((d) => {

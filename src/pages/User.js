@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from "react";
 
-import { Switch } from "antd";
+import { Popconfirm, Switch } from "antd";
 import { CloseOutlined, CheckOutlined } from "@ant-design/icons";
 import { withRouter } from "react-router-dom";
 import "firebase/auth";
@@ -49,13 +49,16 @@ class User extends Component {
       key: "delete",
       render: (teacher) => {
         return (
-          <Button
-            type="primary"
-            danger
-            onClick={() => this.handleDelete(teacher)}
+          <Popconfirm
+            title="Xác nhận xóa giảng viên?"
+            onConfirm={() => this.handleDelete(teacher)}
+            okText="Yes"
+            cancelText="No"
           >
-            Xóa
-          </Button>
+            <Button type="primary" danger>
+              Xóa
+            </Button>
+          </Popconfirm>
         );
       },
     },

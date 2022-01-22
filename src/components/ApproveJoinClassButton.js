@@ -83,15 +83,20 @@ class ApproveJoinClassButton extends PureComponent {
       <div>
         <Button
           type="primary"
-          onClick={() => this.setState({ modalVisible: true })}
+          onClick={(event) => {
+            this.setState({ modalVisible: true });
+          }}
         >
           Cho phép vào lớp
         </Button>
         <Modal
           title="Cho phép vào lớp"
           centered
+          maskClosable={false}
           visible={this.state.modalVisible}
-          onCancel={() => this.setState({ modalVisible: false })}
+          onCancel={(event) => {
+            this.setState({ modalVisible: false });
+          }}
           cancelText={"Đóng"}
           okButtonProps={{
             hidden: true,

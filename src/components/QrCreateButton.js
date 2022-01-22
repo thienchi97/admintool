@@ -245,15 +245,20 @@ class QrCreateButton extends PureComponent {
       <div>
         <Button
           type="primary"
-          onClick={() => this.setState({ modalVisible: true })}
+          onClick={(event) => {
+            this.setState({ modalVisible: true });
+          }}
         >
           Tạo mã điểm danh
         </Button>
         <Modal
           title="Tạo mã điểm danh"
           centered
+          destroyOnClose
           visible={this.state.modalVisible}
-          onCancel={() => this.setState({ modalVisible: false })}
+          onCancel={(event) => {
+            this.setState({ modalVisible: false });
+          }}
           cancelText={"Đóng"}
           okButtonProps={{
             hidden: true,

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { Input, Button, Table, message } from "antd";
+import { Input, Button, Table, message, Popconfirm } from "antd";
 
 import * as classes from "./Table.module.css";
 import "firebase/auth";
@@ -111,13 +111,16 @@ class Student extends Component {
       key: "delete",
       render: (student) => {
         return (
-          <Button
-            type="primary"
-            danger
-            onClick={() => this.handleDelete(student)}
+          <Popconfirm
+            title="Xác nhận xóa học sinh?"
+            onConfirm={() => this.handleDelete(student)}
+            okText="Yes"
+            cancelText="No"
           >
-            Xóa
-          </Button>
+            <Button type="primary" danger>
+              Xóa
+            </Button>
+          </Popconfirm>
         );
       },
     },
@@ -164,6 +167,7 @@ class Student extends Component {
       this.setState({ loading: false });
     }
   };
+
   handleDelete = (student) => {
     const studentRef = ref(this.database, `/students/${student.id}`);
 

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { Button, Table, Space, message, Input } from "antd";
+import { Button, Table, Space, message, Input, Modal } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import * as classes from "./Table.module.css";
 import InputFiles from "react-input-files";
@@ -14,6 +14,7 @@ import { firebaseUUID } from "../utils";
 import { getDatabase, onValue, ref, runTransaction } from "firebase/database";
 import ApproveJoinClassButton from "../components/ApproveJoinClassButton";
 import { UserInfoContext } from "../providers/UserInfoProvider";
+import ClassStatisticButton from "../components/ClassStatisticButton";
 
 class Class extends Component {
   state = {
@@ -21,8 +22,7 @@ class Class extends Component {
     data: [],
     loading: false,
     total: 0,
-    modal1Visible: false,
-    modal2Visible: false,
+    modalVisible: false,
     filter: {
       subjectCode: "",
       subjectName: "",
@@ -56,6 +56,15 @@ class Class extends Component {
       title: "Tên Môn",
       dataIndex: "subjectName",
       key: "subjectName",
+      render: (subjectName, record) => {
+        return (
+          <ClassStatisticButton
+            key={record.id}
+            record={record}
+            subjectName={subjectName}
+          />
+        );
+      },
     },
     {
       title: "Tiết",
@@ -228,14 +237,6 @@ class Class extends Component {
       console.error(error);
     }
   };
-
-  setModal1Visible(modal1Visible) {
-    this.setState({ modal1Visible });
-  }
-
-  setModal2Visible(modal2Visible) {
-    this.setState({ modal2Visible });
-  }
 
   getDataByFilter = () => {
     const { filter, data } = this.state;

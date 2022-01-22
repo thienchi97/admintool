@@ -5,7 +5,7 @@ import { get, getDatabase, query, ref } from "firebase/database";
 import { reduce, values } from "lodash";
 import { UserInfoContext } from "../providers/UserInfoProvider";
 import moment from "moment";
-import { CarryOutOutlined } from "@ant-design/icons";
+import { CarryOutOutlined, CheckOutlined } from "@ant-design/icons";
 
 class InfoStudentButton extends PureComponent {
   state = {
@@ -101,7 +101,11 @@ class InfoStudentButton extends PureComponent {
                       item?.distance === 0 ? "Online" : "Offline"
                     }`}
                   />
-                  {this.checkStudentAttendaced(item.id) && <div>check</div>}
+                  {this.checkStudentAttendaced(item.id) && (
+                    <div>
+                      <CheckOutlined />
+                    </div>
+                  )}
                 </List.Item>
               );
             }}
