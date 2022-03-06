@@ -10,6 +10,8 @@ import {
   ref,
   runTransaction,
   remove,
+  query,
+  get,
 } from "firebase/database";
 import styles from "./Student.module.css";
 import InputFiles from "react-input-files";
@@ -197,8 +199,8 @@ class Student extends Component {
     });
   };
 
-  handleAddListStudent = (students) => {
-    const newStudentList = students
+  handleAddListStudent = async (students) => {
+    let newStudentList = students
       .map((s) => {
         return {
           code: s["Mã số"],
@@ -218,10 +220,63 @@ class Student extends Component {
       .filter((s) => s.code);
 
     const studentRef = ref(this.database, "students");
+    const classRef = ref(this.database, "classroom");
+
+    try {
+      const existStudents = values((await get(query(studentRef))).val());
+      newStudentList = newStudentList.filter(
+        (newStudent) =>
+          existStudents.findIndex((oldStudent) => {
+            const isSameCode = newStudent.code === oldStudent.code;
+            const isSameSubjectCode =
+              newStudent.subjectCode === oldStudent.subjectCode;
+            const isSameGroup =
+              newStudent.group == oldStudent.group ||
+              parseInt(newStudent.group) === parseInt(oldStudent.group);
+            const isSameTo =
+              newStudent.to == oldStudent.to ||
+              parseInt(newStudent.to) === parseInt(oldStudent.to);
+
+            return isSameCode && isSameSubjectCode && isSameGroup && isSameTo;
+          }) === -1
+      );
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (!newStudentList.length) {
+      return;
+    }
 
     runTransaction(studentRef, (students) => {
       const newData = mapKeys(newStudentList, "id");
       return Object.assign(newData, students);
+    });
+
+    runTransaction(classRef, (classrooms) => {
+      const current = classrooms || {};
+
+      Object.keys(current).forEach((key) => {
+        const classroom = current[key];
+        const studentsOfClass = newStudentList.filter((student) => {
+          const isSameSubjectCode =
+            trim(student.subjectCode) === trim(classroom.subjectCode);
+          const isSameGroup =
+            student.group == classroom.group ||
+            parseInt(student.group) === parseInt(classroom.group);
+          const isSameTo =
+            student.to == classroom.to ||
+            parseInt(student.to) === parseInt(classroom.to);
+
+          return isSameTo && isSameGroup && isSameSubjectCode;
+        });
+
+        const studentIds = studentsOfClass.map(({ id }) => id);
+        classroom.students = (classroom.student || []).concat(studentIds);
+        classroom.students = [...new Set(classroom.students)];
+      });
+
+      return current;
     });
   };
 

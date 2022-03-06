@@ -10,9 +10,10 @@ import {
   Select,
 } from "antd";
 
-import { getDatabase, ref, update } from "firebase/database";
+import { getDatabase, ref, runTransaction, update } from "firebase/database";
 import moment from "moment";
 import "firebase/auth";
+import { values } from "lodash";
 
 const { RangePicker } = DatePicker;
 
@@ -36,6 +37,7 @@ class EditStudent extends PureComponent {
 
   handleUpdateClass = async (formData) => {
     const { student } = this.props;
+    const classRef = ref(this.database, "classroom");
     const studentRef = ref(this.database, `/students/${student.id}`);
 
     try {
@@ -45,6 +47,27 @@ class EditStudent extends PureComponent {
       console.log(error);
       message.error("Cập nhật thông tin sinh viên thất bại.");
     }
+
+    runTransaction(classRef, (classrooms) => {
+      const classroom = values(classrooms).find(
+        (c) =>
+          formData?.subjectCode === c?.subjectCode &&
+          (formData?.to == c?.to ||
+            parseInt(formData?.to) === parseInt(c?.to)) &&
+          (formData?.group == c?.group ||
+            parseInt(formData?.group) === parseInt(c?.group))
+      );
+
+      if (!classroom) {
+        return classrooms;
+      }
+
+      classroom.students = [
+        ...new Set((classroom.students || []).concat([student.id])),
+      ];
+
+      return classrooms;
+    });
   };
 
   render() {

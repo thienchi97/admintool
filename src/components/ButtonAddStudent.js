@@ -9,7 +9,7 @@ import {
   runTransaction,
   update,
 } from "firebase/database";
-import { values } from "lodash";
+import { trim, values, valuesIn } from "lodash";
 import { UserInfoContext } from "../providers/UserInfoProvider";
 
 const layout = {
@@ -49,6 +49,7 @@ class ButtonAddStudent extends PureComponent {
 
   handleAddStudent = (student) => {
     const id = firebaseUUID();
+    const classRef = ref(this.database, "classroom");
     const studentRef = ref(this.database, `/students/`);
     const { subjectCodeData } = this.state;
 
@@ -75,6 +76,27 @@ class ButtonAddStudent extends PureComponent {
         message.success("Thêm sinh viên thành công");
       })
       .catch(() => message.error("Thêm sinh viên thất bại"));
+
+    runTransaction(classRef, (classrooms) => {
+      const classroom = values(classrooms).find(
+        (c) =>
+          subjectInfo?.subjectCode === c?.subjectCode &&
+          (subjectInfo?.to == c?.to ||
+            parseInt(subjectInfo?.to) === parseInt(c?.to)) &&
+          (subjectInfo?.group == c?.group ||
+            parseInt(subjectInfo?.group) === parseInt(c?.group))
+      );
+
+      if (!classroom) {
+        return classrooms;
+      }
+
+      classroom.students = [
+        ...new Set((classroom.students || []).concat([id])),
+      ];
+
+      return classrooms;
+    });
   };
 
   render() {
@@ -88,7 +110,7 @@ class ButtonAddStudent extends PureComponent {
           Thêm học sinh
         </Button>
         <Modal
-          title="Thêm lớp"
+          title="Thêm học sinh"
           centered
           visible={this.state.modalVisible}
           onCancel={() => this.setState({ modalVisible: false })}

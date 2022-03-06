@@ -24,14 +24,20 @@ class InfoStudentButton extends PureComponent {
       return c?.students?.some((id) => record.id === id);
     });
 
-    const classAttendanced = values(
-      (await get(query(ref(this.database, `attendence/${classInfo.id}`)))).val()
-    );
+    try {
+      const classAttendanced = values(
+        (
+          await get(query(ref(this.database, `attendence/${classInfo.id}`)))
+        ).val()
+      );
 
-    this.setState({
-      classInfo: classInfo,
-      classAttendanced: classAttendanced,
-    });
+      this.setState({
+        classInfo: classInfo,
+        classAttendanced: classAttendanced,
+      });
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   componentDidUpdate() {}

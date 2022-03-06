@@ -72,8 +72,10 @@ class ButtonAddClass extends PureComponent {
       group: classroom.group,
       to: classroom.to,
       day: classroom.day,
+      siso: classroom.siso,
       subjectName: classroom.subjectName,
       tiet: classroom.tiet,
+      tongtiet: classroom.tongtiet,
       id: id,
       room: classroom.room,
       teacher: teacher.id,
@@ -170,12 +172,36 @@ class ButtonAddClass extends PureComponent {
               <Input type="text" />
             </Form.Item>
             <Form.Item
+              name="siso"
+              label="Sỉ số"
+              rules={[
+                {
+                  required: true,
+                  message: "nhom bat buoc nhap",
+                },
+              ]}
+            >
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item
               name="room"
               label="Phòng học"
               rules={[
                 {
                   required: true,
                   message: "Phong hoc bat buoc nhap",
+                },
+              ]}
+            >
+              <Input type="text" />
+            </Form.Item>
+            <Form.Item
+              name="tongtiet"
+              label="Tổng tiết"
+              rules={[
+                {
+                  required: true,
+                  message: "nhom bat buoc nhap",
                 },
               ]}
             >
